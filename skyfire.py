@@ -100,11 +100,11 @@ class NonRoomCommand:
            "\\join ROOM_NAME\n" + \
            "\\help"
 
-class Skypefire:
+class Skyfire:
   @staticmethod
   def getRoomBlob(room):
     """ para: Class Room in pyfire API """
-    return rooms[Skypefire.getRoomName(room)].blob
+    return rooms[Skyfire.getRoomName(room)].blob
   @staticmethod
   def getRoomName(room):
     """ para: Class Room in pyfire API """
@@ -146,8 +146,8 @@ class CampfireEventHandler:
     else:
       notDisplay = True
 
-    roomName = Skypefire.getRoomName(message.room)
-    roomBlob = Skypefire.getRoomBlob(message.room)
+    roomName = Skyfire.getRoomName(message.room)
+    roomBlob = Skyfire.getRoomBlob(message.room)
     if notDisplay:
       return
     if message.is_text() and user in rooms[roomName].msgFromSkype and message.body in rooms[roomName].msgFromSkype[user]:
@@ -207,7 +207,7 @@ if __name__ == "__main__":
   description = "==========Use Skype as your amazing campfire client app=========="
   parser = argparse.ArgumentParser(description=description)
   parser.add_argument('-c', '--config', default='example.cfg', help='config file. Use [example.cfg] by default')
-  parser.add_argument('-v', '--version', action='version', version='Skypefire 0.1')
+  parser.add_argument('-v', '--version', action='version', version='Skyfire 0.1')
   parser.add_argument('-l', '--logfile', help='log file. Print to stdout by default')
   args = parser.parse_args()
 
@@ -228,7 +228,7 @@ if __name__ == "__main__":
     rooms[item[0]].blob = item[1]
   for item in config.items('mapping'):
     print 'Get mapping [%s] -> [%s]' % (item[0], item[1])
-    skype2camp[item[0]] = Skypefire()
+    skype2camp[item[0]] = Skyfire()
     skype2camp[item[0]].token = item[1]
 
   skype = Skype4Py.Skype()
@@ -247,9 +247,9 @@ if __name__ == "__main__":
   for roomName in rooms:
     # msgFromSkype data structure: ['campfire user name'] -> ['msg1', 'msg2',..., 'msgn']
     rooms[roomName].msgFromSkype = {}
-    rooms[roomName].topic = Skypefire.getRoomTopic(rooms[roomName])
+    rooms[roomName].topic = Skyfire.getRoomTopic(rooms[roomName])
     rooms[roomName].latestSpeaker = ""
-    rooms[roomName].stream = rooms[roomName].get_stream(error_callback=Skypefire.error,live=False,use_process=False)
+    rooms[roomName].stream = rooms[roomName].get_stream(error_callback=Skyfire.error,live=False,use_process=False)
     rooms[roomName].stream.attach(CampfireEventHandler.incoming).start()
     print 'Listening for room [%s]...' % roomName
 
