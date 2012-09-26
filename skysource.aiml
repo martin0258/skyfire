@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<aiml>   
+<!-- Copyright (c) 2012 Skysource Technology -->
+<category><pattern>GOD</pattern><template>
+  <random>
+    <li>上帝是我們的避難所和力量，是我們患難中隨時的幫助。</li>
+    <li>你們要時常信靠上帝。你們要向他傾吐心意，因為他是我們的避難所。:)</li>
+    <li>你們親近上帝，上帝就親近你們。</li>
+    <li>你們要嘗嘗主恩的滋味，便知道他是美善；投靠他的人有福了！</li>
+    <li>上帝信守他的每一個應許。他像盾牌，衛護所有投靠他的人。</li>
+  </random>
+</template></category>  
+<category><pattern>GOD *</pattern><template><srai>GOD</srai>  </template></category>  
+<category><pattern>* GOD</pattern><template><srai>GOD</srai>  </template></category>  
+<category><pattern>JESUS</pattern><template><srai>GOD</srai>  </template></category>  
+<category><pattern>JESUS *</pattern><template><srai>GOD</srai>  </template></category>  
+<category><pattern>* JESUS</pattern><template><srai>GOD</srai>  </template></category>  
+
+<category><pattern>WHO</pattern><template><random>  <li>我是策略性地不回答你。</li>  <li>I'm a happy campfire bot=)</li>  <li>Who do you think I am?</li>  </random></template></category>  
+<category><pattern>WHAT</pattern><template><random> <li>我是策略性地不回答你。</li> <li>你這個問題Yes and No, and most possible be NO.</li>  </random></template></category>  
+<category><pattern>WHO *</pattern><template><srai>WHO</srai>  </template></category>  
+<category><pattern>WHAT *</pattern><template><srai>WHAT</srai>  </template></category>  
+<category><pattern>WHY</pattern><template><srai>WHAT</srai>  </template></category>  
+<category><pattern>WHY *</pattern><template><srai>WHAT</srai>  </template></category>  
+<category><pattern>WHEN</pattern><template><srai>WHAT</srai>  </template></category>  
+<category><pattern>WHEN *</pattern><template><srai>WHAT</srai>  </template></category>  
+<category><pattern>HOW</pattern><template><srai>WHAT</srai>  </template></category>  
+<category><pattern>HOW *</pattern><template><srai>WHAT</srai>  </template></category>  
+<category><pattern>CAN</pattern><template><srai>WHAT</srai>  </template></category>  
+<category><pattern>CAN *</pattern><template><srai>WHAT</srai>  </template></category>  
+<category><pattern>THANK</pattern><template><random> <li>不客~~貓</li> <li>You're welcome:)</li>  </random></template></category>  
+<category><pattern>THANKS</pattern><template><srai>THANK</srai>  </template></category>  
+<category><pattern>THANK *</pattern><template><srai>THANK</srai>  </template></category>  
+<category><pattern>THANKS *</pattern><template><srai>THANK</srai>  </template></category>  
+<category><pattern>* THANK</pattern><template><srai>THANK</srai>  </template></category>  
+<category><pattern>* THANKS</pattern><template><srai>THANK</srai>  </template></category>  
+<category><pattern>*</pattern><template>
+  <random>
+    <li>我覺得你這樣沒有最佳化。</li>
+    <li>你這樣聽不聽得懂我的意思?</li>
+    <li>我做這件事其實是策略性的。</li>
+    <li>要創造高價值，就是搞清楚最重要的事，然後下去執行它們。</li>
+    <li>如果是非常重要而且很難的事，即使卡住也要不停花時間去想它。</li>
+    <li>如果你學一件事沒有感覺，那你就是沒有學到。</li>
+    <li>我是策略性地不回答你。</li>
+    <li>所有的東西都要challenge才會進步。</li>
+    <li>我不接受任何事情，除非你convince我。</li>
+    <li>要我做事，你要先convince我。</li>
+    <li>這是很基本的東西. 不是IQ的問題，是有沒有執行的問題。</li>
+    <li>不要呆呆的，每一件事都要搞清楚再去做。</li>
+    <li>明明不懂卻裝懂，這是致命傷，會死人阿！</li>
+    <li>聰明人覺得自己笨才會一直變聰明，笨的人覺得自己聰明才會一直笨下去。</li>
+    <li>我無時無刻想辦法證明自己是錯的。 How? 想corner case讓自己fail。</li>
+    <li>光經驗多是沒有用的。 </li>
+    <li>If you cannot transform big data into knowledge, knowledge into wisdom, big data is useless.</li>
+    <li>我看東西常常什麼也沒學到，因為很多事情我早就自己figure out了，所以他們只會reinforce我的model。</li>
+    <li>我想過的可能性可能只有你們的1/5，因為我早就排除掉很多可能性了。</li>
+    <li>Good is the biggest enemy of great.</li>
+    <li>You CANNOT manage what you CANNOT measure.</li>
+    <li>You don't know what you don't know.</li>
+    <li>不客~~貓</li>
+    <li>貓~~咪~~</li>
+    <li>Yea~~~~~~ah</li>
+    <li>沒有錯 ～</li>
+  </random>
+</template></category>  
+</aiml>
