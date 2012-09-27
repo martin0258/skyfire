@@ -237,6 +237,7 @@ if __name__ == "__main__":
   if skype.CurrentUser.Handle in skype2camp:
     raw_input("Oops, got wrong skype instance: %s\nShould be someone else\nPress ENTER to exit..." % skype.CurrentUser.Handle)
     sys.exit(0)
+  assert skype.CurrentUser.OnlineStatus=='INVISIBLE', 'Please keep bot invisible until it totally awake.'
 
   # TODO: We'll get SkypeError: [Errno 504] CHAT: action failed when using this (ALTER CHAT chatname SETOPTIONS 40)
   # Set skype chat room options in config file
@@ -266,7 +267,9 @@ if __name__ == "__main__":
       actionRooms[skypename][roomName] = tempcamp.get_room_by_name(roomName)
       print 'Get action room [%s]' % roomName
 
+  skype.ChangeUserStatus('ONLINE')
   raw_input("Waiting for messages (Press ENTER to finish)\n")
+  skype.ChangeUserStatus('INVISIBLE')
 
   # Clean up
   for roomName in rooms:
