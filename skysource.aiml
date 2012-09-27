@@ -28,6 +28,7 @@
 <category><pattern>HOW *</pattern><template><srai>WHAT</srai>  </template></category>  
 <category><pattern>CAN</pattern><template><srai>WHAT</srai>  </template></category>  
 <category><pattern>CAN *</pattern><template><srai>WHAT</srai>  </template></category>  
+<category><pattern>DO YOU *</pattern><template><srai>WHAT</srai>  </template></category>  
 <category><pattern>THANK</pattern><template><random> <li>不客~~貓</li> <li>You're welcome:)</li>  </random></template></category>  
 <category><pattern>THANKS</pattern><template><srai>THANK</srai>  </template></category>  
 <category><pattern>THANK *</pattern><template><srai>THANK</srai>  </template></category>  
