@@ -8,7 +8,15 @@ import sys
 import re
 import skybot
 
-class RoomCommand:
+class UserCommand:
+  AvailableCommands = {}
+  def HandleCommand(self):
+    for k, v in self.__class__.AvailableCommands.items():
+      if re.match(k, self.command):
+        return getattr(self, v)()
+    return "-- Sorry we don't implement this (bow)\n\\help for available commands"
+
+class RoomCommand(UserCommand):
   AvailableCommands = \
   {
     r'\\topic$' : 'GetTopic',
@@ -21,12 +29,6 @@ class RoomCommand:
     self.command = command
     self.targetRoom = targetRoom
     self.skypeUser = skypeUser
-  """ para: self """
-  def HandleCommand(self):
-    for k, v in RoomCommand.AvailableCommands.items():
-      if re.match(k, self.command):
-        return getattr(self, v)()
-    return "-- Sorry we don't implement this (bow)\n\\help for available commands"
   """ para: self """
   def GetTopic(self):
     return "topic=%s" % self.targetRoom.get_data()["topic"]
@@ -55,7 +57,7 @@ class RoomCommand:
            "\\who\n" + \
            "\\help"
 
-class NonRoomCommand:
+class NonRoomCommand(UserCommand):
   AvailableCommands = \
   {
     r'\\room$' : 'GetRoom',
@@ -66,32 +68,30 @@ class NonRoomCommand:
     self.command = command
     self.skypeUser = skypeUser
   """ para: self """
-  def HandleCommand(self):
-    for k, v in NonRoomCommand.AvailableCommands.items():
-      if re.match(k, self.command):
-        return getattr(self, v)()
-    return "Sorry we don't implement this (bow)\n\\help for available commands"
-  """ para: self """
   def GetRoom(self):
-    result = "-- Which room do you want to join?\n"
-    for roomName in rooms:
-      result += roomName + "\n"
-    result += "No available room...(tumbleweed)" if len(rooms)==0 else "--\n\\join ROOM_NAME to join a room"
+    global campfires
+    result = "-- Room List\n"
+    roomList = Skyfire.GetRoomList(self.skypeUser)
+    for roomName in roomList:
+      result += "[%s]\n" % roomName
+    result += "No available room...(tumbleweed)" if len(roomList)==0 else ""
     return result
   """ para: self """
   def JoinRoom(self):
-    global skype, rooms
+    global skype, campfires
     roomName = self.command[5:].strip()
-    if roomName in rooms:
+    if roomName in Skyfire.GetRoomList(self.skypeUser):
+      # ERROR: we would get unexpected return using the method of following line
       #skype.CreateChatUsingBlob(rooms[roomName].blob).AddMembers(self.skypeUser)
-      #skype.CreateChatUsingBlob(rooms[roomName].blob).SendMessage("/me")
-      AddMemberCommand = "ALTER CHAT %s ADDMEMBERS %s" % (skype.CreateChatUsingBlob(rooms[roomName].blob).Name, self.skypeUser.Handle)
-      Reply = "ALTER CHAT ADDMEMBERS"
-      print AddMemberCommand, Reply
-      skype.SendCommand(Skype4Py.api.Command(AddMemberCommand, Reply))
-      result = "You should in the room now. Enjoy!" 
+      if campfires[self.skypeUser.Handle].get_room_by_name(roomName).join():
+        AddMemberCommand = "ALTER CHAT %s ADDMEMBERS %s" % (skype.CreateChatUsingBlob(rooms[roomName].blob).Name, self.skypeUser.Handle)
+        Reply = "ALTER CHAT ADDMEMBERS"
+        skype.SendCommand(Skype4Py.api.Command(AddMemberCommand, Reply))
+        result = "You should in the room now. Enjoy!"
+      else:
+        result = "You failed to join the room. Sorry (bow)"
     else:
-      result = "Sorry we don't have room [%s]...(bow)" % roomName
+      result = "Sorry room [%s] is not in the list (bow)" % roomName
     return result
   """ para: self """
   def ShowHelp(self):
@@ -101,20 +101,10 @@ class NonRoomCommand:
            "\\help"
 
 class Skyfire:
+  """ para: Skype4Py User Object """
   @staticmethod
-  def getRoomBlob(room):
-    """ para: Class Room in pyfire API """
-    return rooms[Skyfire.getRoomName(room)].blob
-  @staticmethod
-  def getRoomName(room):
-    """ para: Class Room in pyfire API """
-    roomData = room.get_data()
-    return roomData['name']
-  @staticmethod
-  def getRoomTopic(room):
-    """ para: Class Room in pyfire API """
-    roomData = room.get_data()
-    return roomData['topic']
+  def GetRoomList(skypeUser):
+    return [room['name'] for room in campfires[skypeUser.Handle].get_rooms()] if skypeUser.Handle in campfires else []
   @staticmethod
   def error(e):
     print("Stream STOPPED due to ERROR: %s" % e)
@@ -146,8 +136,8 @@ class CampfireEventHandler:
     else:
       notDisplay = True
 
-    roomName = Skyfire.getRoomName(message.room)
-    roomBlob = Skyfire.getRoomBlob(message.room)
+    roomName = message.room.get_data()['name']
+    roomBlob = rooms[roomName].blob
     if notDisplay:
       return
     if message.is_text() and user in rooms[roomName].msgFromSkype and message.body in rooms[roomName].msgFromSkype[user]:
@@ -161,34 +151,38 @@ class CampfireEventHandler:
         rooms[roomName].latestSpeaker = user
       skype.CreateChatUsingBlob(roomBlob).SendMessage(msg)
       print msg
-    if message.is_topic_change():
+    elif message.is_topic_change():
       rooms[roomName].topic = message.body
       skype.CreateChatUsingBlob(roomBlob).SendMessage(msg)
       print msg
+    else:
+      # We're not going to deal with other types
+      pass
 
 class SkypeEventHandler:
   @staticmethod
   def monitor_message(msg, stat):
-    global rooms, actionRooms, skype2camp
+    global rooms, campfires, skype2camp
     msgBody = msg.Body.strip()
     print msg.Chat.Topic, stat, msg.FromHandle, msgBody
     msg.IsCommand = True if len(msgBody)>0 and msgBody[0] == '\\' else False
     if not stat == "RECEIVED":
       return
     if not msg.FromHandle in skype2camp:
-      msg.Chat.SendMessage("-- Sorry you're not a member of skyfire service\nAsk admin to let you join the party\\0/")
-    elif msg.Chat.Topic in rooms:
+      msg.Chat.SendMessage("Sorry you're not a member of skyfire service\nAsk admin to let you in.")
+    elif msg.Chat.Topic in Skyfire.GetRoomList(msg.Sender):
       roomName = msg.Chat.Topic
+      targetRoom = campfires[msg.FromHandle].get_room_by_name(roomName)
       if msg.IsCommand:
-        result = RoomCommand(msgBody, actionRooms[msg.FromHandle][roomName], msg.Sender).HandleCommand()
+        result = RoomCommand(msgBody, targetRoom, msg.Sender).HandleCommand()
         if result:
           skype.CreateChatUsingBlob(rooms[roomName].blob).SendMessage(result)
         return
       print "%s Sending to %s: %s" % (msg.FromHandle, roomName, msgBody)
       # The data structure used to avoid duplicate messages
       rooms[roomName].msgFromSkype[skype2camp[msg.FromHandle].campname].append(msgBody)
-      actionRooms[msg.FromHandle][roomName].join()
-      actionRooms[msg.FromHandle][roomName].speak(msgBody)
+      targetRoom.join()
+      targetRoom.speak(msgBody)
     else:
       # Non-room service. Let people join specifc room.
       if msg.IsCommand:
@@ -204,16 +198,17 @@ if __name__ == "__main__":
   # Purpose: run from python command line window in window task bar
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-  description = "==========Use Skype as your amazing campfire client app=========="
+  description = "========== Use Skype as your amazing campfire client app =========="
   parser = argparse.ArgumentParser(description=description)
   parser.add_argument('-c', '--config', default='example.cfg', help='config file. Use [example.cfg] by default')
   parser.add_argument('-v', '--version', action='version', version='Skyfire 0.1')
   parser.add_argument('-l', '--logfile', help='log file. Print to stdout by default')
+  parser.add_argument('--test', action="store_true", help="Only room's name starts with 'Test' would be listened.")
   args = parser.parse_args()
 
   rooms = {}
-  actionRooms = {}
   skype2camp = {}
+  campfires = {}
   config = ConfigParser.ConfigParser()
   config.optionxform = str
   config.read(args.config)
@@ -222,10 +217,6 @@ if __name__ == "__main__":
   password = config.get('campfire','password')
   campfire = pyfire.Campfire(domain, username, password, ssl=True)
   print 'Reading config file......'
-  for item in config.items('blob'):
-    print 'Get room [%s]' % item[0]
-    rooms[item[0]] = campfire.get_room_by_name(item[0])
-    rooms[item[0]].blob = item[1]
   for item in config.items('mapping'):
     print 'Get mapping [%s] -> [%s]' % (item[0], item[1])
     skype2camp[item[0]] = Skyfire()
@@ -244,28 +235,28 @@ if __name__ == "__main__":
   #for roomName in rooms:
   #  skype.CreateChatUsingBlob(rooms[roomName].blob).Options = 40
 
-  """ multi-room version """
-  for roomName in rooms:
-    # msgFromSkype data structure: ['campfire user name'] -> ['msg1', 'msg2',..., 'msgn']
-    rooms[roomName].msgFromSkype = {}
-    rooms[roomName].topic = Skyfire.getRoomTopic(rooms[roomName])
-    rooms[roomName].latestSpeaker = ""
-    rooms[roomName].stream = rooms[roomName].get_stream(error_callback=Skyfire.error,live=False,use_process=False)
-    rooms[roomName].stream.attach(CampfireEventHandler.incoming).start()
-    print 'Listening for room [%s]...' % roomName
-
-  """ multi-user action using skype """
   for skypename in skype2camp:
-    actionRooms[skypename] = {}
     tempuser = campfire._user
     tempuser.token = skype2camp[skypename].token
     tempcamp = pyfire.Campfire(domain, username=None, password=None, ssl=True, currentUser=tempuser)
+    campfires[skypename] = tempcamp
     skype2camp[skypename].campname = unicode(tempcamp.get_connection().get(url="users/me", key="user")["name"])
     print 'Skype:[%s] --> Campfire:[%s]' % (skypename, skype2camp[skypename].campname)
-    for roomName in rooms:
-      rooms[roomName].msgFromSkype[skype2camp[skypename].campname] = []
-      actionRooms[skypename][roomName] = tempcamp.get_room_by_name(roomName)
-      print 'Get action room [%s]' % roomName
+    for roomName in Skyfire.GetRoomList(skype.User(skypename)):
+      if args.test and roomName.find('Test')!=0:
+        continue
+      # Initialize room for listening message from campfire
+      if not roomName in rooms:
+        rooms[roomName] = tempcamp.get_room_by_name(roomName)
+        rooms[roomName].blob = config.get('blob',roomName)
+        # msgFromSkype data structure: ['campfire user name'] -> ['msg1', 'msg2',..., 'msgn']
+        rooms[roomName].msgFromSkype = {}
+        rooms[roomName].msgFromSkype[skype2camp[skypename].campname] = []
+        rooms[roomName].topic = rooms[roomName].get_data()['topic']
+        rooms[roomName].latestSpeaker = ""
+        rooms[roomName].stream = rooms[roomName].get_stream(error_callback=Skyfire.error,live=False,use_process=False)
+        rooms[roomName].stream.attach(CampfireEventHandler.incoming).start()
+        print 'Listening for room [%s]...' % roomName
 
   skype.ChangeUserStatus('ONLINE')
   raw_input("Waiting for messages (Press ENTER to finish)\n")
@@ -276,11 +267,6 @@ if __name__ == "__main__":
     rooms[roomName].stream.stop().join()
     rooms[roomName].leave()
     print 'Leave room [%s]' % roomName
-  for skypename in skype2camp:
-    print 'Clean action rooms for [%s]' % skypename
-    for roomName in actionRooms[skypename]:
-      actionRooms[skypename][roomName].leave()
-      print 'Leave action room [%s]' % roomName
 
   print 'Thank you for using skyfire! Bye=)'
   sys.exit(0)
