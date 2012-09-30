@@ -12,7 +12,8 @@ class Skyfire:
   """ para: Skype4Py User Object """
   @staticmethod
   def GetRoomList(skypeUser):
-    roomList = [room['name'] for room in campfires[skypeUser.Handle].get_rooms()] if skypeUser.Handle in campfires else []
+    global skyfirers
+    roomList = [room['name'] for room in skyfirers[skypeUser.Handle].campObj.get_rooms()] if skypeUser.Handle in skyfirers else []
     return [roomName for roomName in roomList if roomName.find('Test')==0] if args.test else roomList
   @staticmethod
   def error(e):
@@ -80,7 +81,6 @@ class NonRoomCommand(UserCommand):
     self.skypeUser = skypeUser
   """ para: self """
   def GetRoom(self):
-    global campfires
     result = "-- Room List\n"
     roomList = Skyfire.GetRoomList(self.skypeUser)
     for roomName in roomList:
@@ -89,12 +89,12 @@ class NonRoomCommand(UserCommand):
     return result
   """ para: self """
   def JoinRoom(self):
-    global skype, campfires
+    global skype, skyfirers
     roomName = self.command[5:].strip()
     if roomName in Skyfire.GetRoomList(self.skypeUser):
       # ERROR: we would get unexpected return using the method of following line
       #skype.CreateChatUsingBlob(rooms[roomName].blob).AddMembers(self.skypeUser)
-      if campfires[self.skypeUser.Handle].get_room_by_name(roomName).join():
+      if skyfirers[self.skypeUser.Handle].campObj.get_room_by_name(roomName).join():
         AddMemberCommand = "ALTER CHAT %s ADDMEMBERS %s" % (skype.CreateChatUsingBlob(rooms[roomName].blob).Name, self.skypeUser.Handle)
         Reply = "ALTER CHAT ADDMEMBERS"
         skype.SendCommand(Skype4Py.api.Command(AddMemberCommand, Reply))
@@ -116,24 +116,25 @@ class CampfireEventHandler:
   def incoming(message):
     global skype, rooms
     msg = ""
-    user = ""
+    campName = ""
     if message.user:
-      user = message.user.name
+      campName = message.user.name
+      campId = message.user.id
 
     notDisplay = False
     if message.is_joining():
-      msg = "--> %s ENTERS THE ROOM" % user
+      msg = "--> %s ENTERS THE ROOM" % campName
     elif message.is_leaving():
-      msg = "<-- %s LEFT THE ROOM" % user
+      msg = "<-- %s LEFT THE ROOM" % campName
     elif message.is_tweet():
-      msg = "[%s] %s TWEETED '%s' - %s" % (user, message.tweet["user"], message.tweet["tweet"], message.tweet["url"])
+      msg = "[%s] %s TWEETED '%s' - %s" % (campName, message.tweet["user"], message.tweet["tweet"], message.tweet["url"])
     elif message.is_text():
       msg = "%s" % (message.body)
     elif message.is_upload():
-      msg = "-- %s UPLOADED FILE %s: %s" % (user, message.upload["name"],
+      msg = "-- %s UPLOADED FILE %s: %s" % (campName, message.upload["name"],
       message.upload["url"])
     elif message.is_topic_change():
-      msg = "-- %s CHANGED TOPIC TO '%s'" % (user, message.body)
+      msg = "-- %s CHANGED TOPIC TO '%s'" % (campName, message.body)
     else:
       notDisplay = True
 
@@ -141,15 +142,15 @@ class CampfireEventHandler:
     roomBlob = rooms[roomName].blob
     if notDisplay:
       return
-    if message.is_text() and user in rooms[roomName].msgFromSkype and message.body in rooms[roomName].msgFromSkype[user]:
-      rooms[roomName].msgFromSkype[user].remove(message.body)
-      rooms[roomName].latestSpeaker = user
+    if message.is_text() and campId in rooms[roomName].msgFromSkype and message.body in rooms[roomName].msgFromSkype[campId]:
+      rooms[roomName].msgFromSkype[campId].remove(message.body)
+      rooms[roomName].latestSpeaker = campId
       return
     if message.is_text():
       # Use skype chat command /me to specify who is speaking
-      if user != rooms[roomName].latestSpeaker:
-        skype.CreateChatUsingBlob(roomBlob).SendMessage("/me - [%s]" % user)
-        rooms[roomName].latestSpeaker = user
+      if campId != rooms[roomName].latestSpeaker:
+        skype.CreateChatUsingBlob(roomBlob).SendMessage("/me - [%s]" % campName)
+        rooms[roomName].latestSpeaker = campId
       skype.CreateChatUsingBlob(roomBlob).SendMessage(msg)
       print msg
     elif message.is_topic_change():
@@ -163,25 +164,24 @@ class CampfireEventHandler:
 class SkypeEventHandler:
   @staticmethod
   def monitor_message(msg, stat):
-    global rooms, campfires, skype2camp
+    global rooms, skyfirers
     msgBody = msg.Body.strip()
-    print msg.Chat.Topic, stat, msg.FromHandle, msgBody
     msg.IsCommand = True if len(msgBody)>0 and msgBody[0] == '\\' else False
+    print msg.Chat.Topic, stat, msg.FromHandle, msgBody
     if not stat == "RECEIVED":
       return
-    if not msg.FromHandle in skype2camp:
+    if not msg.FromHandle in skyfirers:
       msg.Chat.SendMessage("Sorry you're not a member of skyfire service\nAsk admin to let you in.")
     elif msg.Chat.Topic in Skyfire.GetRoomList(msg.Sender):
       roomName = msg.Chat.Topic
-      targetRoom = campfires[msg.FromHandle].get_room_by_name(roomName)
+      targetRoom = skyfirers[msg.FromHandle].campObj.get_room_by_name(roomName)
       if msg.IsCommand:
         result = RoomCommand(msgBody, targetRoom, msg.Sender).HandleCommand()
         if result:
           skype.CreateChatUsingBlob(rooms[roomName].blob).SendMessage(result)
         return
       print "%s Sending to %s: %s" % (msg.FromHandle, roomName, msgBody)
-      # The data structure used to avoid duplicate messages
-      rooms[roomName].msgFromSkype[skype2camp[msg.FromHandle].campname].append(msgBody)
+      rooms[roomName].msgFromSkype[skyfirers[msg.FromHandle].campId].append(msgBody)
       targetRoom.join()
       targetRoom.speak(msgBody)
     else:
@@ -207,9 +207,10 @@ if __name__ == "__main__":
   parser.add_argument('--test', action="store_true", help="Only room's name starts with 'Test' would be listened.")
   args = parser.parse_args()
 
+  # data structure to store users' info who are using this integration service
+  # ['skypename'] : Skyfire object, which contains token, campfire object, campfire userId
+  skyfirers = {}
   rooms = {}
-  skype2camp = {}
-  campfires = {}
   config = ConfigParser.ConfigParser()
   config.optionxform = str
   config.read(args.config)
@@ -220,13 +221,13 @@ if __name__ == "__main__":
   print 'Reading config file......'
   for item in config.items('mapping'):
     print 'Get mapping [%s] -> [%s]' % (item[0], item[1])
-    skype2camp[item[0]] = Skyfire()
-    skype2camp[item[0]].token = item[1]
+    skyfirers[item[0]] = Skyfire()
+    skyfirers[item[0]].token = item[1]
 
   skype = Skype4Py.Skype()
   skype.Attach()
   skype.OnMessageStatus = SkypeEventHandler.monitor_message
-  if skype.CurrentUser.Handle in skype2camp:
+  if skype.CurrentUser.Handle in skyfirers:
     raw_input("Oops, got wrong skype instance: %s\nShould be someone else\nPress ENTER to exit..." % skype.CurrentUser.Handle)
     sys.exit(0)
   assert skype.CurrentUser.OnlineStatus=='INVISIBLE', 'Please keep bot invisible until it totally awake.'
@@ -237,23 +238,24 @@ if __name__ == "__main__":
   #for roomName in rooms:
   #  skype.CreateChatUsingBlob(rooms[roomName].blob).Options = 40
 
-  for skypename in skype2camp:
+  for skypename in skyfirers:
     tempuser = campfire._user
-    tempuser.token = skype2camp[skypename].token
+    tempuser.token = skyfirers[skypename].token
     tempcamp = pyfire.Campfire(domain, username=None, password=None, ssl=True, currentUser=tempuser)
-    campfires[skypename] = tempcamp
-    skype2camp[skypename].campname = unicode(tempcamp.get_connection().get(url="users/me", key="user")["name"])
-    print 'Skype:[%s] --> Campfire:[%s]' % (skypename, skype2camp[skypename].campname)
+    skyfirers[skypename].campObj = tempcamp
+    skyfirers[skypename].campId = tempcamp.get_connection().get(url="users/me", key="user")["id"]
+    campUsername = unicode(tempcamp.get_connection().get(url="users/me", key="user")["name"])
+    print 'Skype:[%s] --> Campfire:[%s]' % (skypename, campUsername)
     for roomName in Skyfire.GetRoomList(skype.User(skypename)):
       # Initialize room for listening message from campfire
       if not roomName in rooms:
         rooms[roomName] = tempcamp.get_room_by_name(roomName)
         rooms[roomName].blob = config.get('blob',roomName)
-        # msgFromSkype data structure: ['campfire user name'] -> ['msg1', 'msg2',..., 'msgn']
+        # msgFromSkype is the data structure used to avoid duplicate message: [campfire userId] -> ['msg1', 'msg2',..., 'msgn']
         rooms[roomName].msgFromSkype = {}
-        rooms[roomName].msgFromSkype[skype2camp[skypename].campname] = []
+        rooms[roomName].msgFromSkype[skyfirers[skypename].campId] = []
         rooms[roomName].topic = rooms[roomName].get_data()['topic']
-        rooms[roomName].latestSpeaker = ""
+        rooms[roomName].latestSpeaker = None
         rooms[roomName].stream = rooms[roomName].get_stream(error_callback=Skyfire.error,live=False,use_process=False)
         rooms[roomName].stream.attach(CampfireEventHandler.incoming).start()
         print 'Listening for room [%s]...' % roomName
