@@ -8,13 +8,24 @@ import sys
 import re
 import skybot
 
+class Skyfire:
+  """ para: Skype4Py User Object """
+  @staticmethod
+  def GetRoomList(skypeUser):
+    roomList = [room['name'] for room in campfires[skypeUser.Handle].get_rooms()] if skypeUser.Handle in campfires else []
+    return [roomName for roomName in roomList if roomName.find('Test')==0] if args.test else roomList
+  @staticmethod
+  def error(e):
+    print("Stream STOPPED due to ERROR: %s" % e)
+    print("Press ENTER to continue")
+    
 class UserCommand:
   AvailableCommands = {}
   def HandleCommand(self):
     for k, v in self.__class__.AvailableCommands.items():
       if re.match(k, self.command):
         return getattr(self, v)()
-    return "-- Sorry we don't implement this (bow)\n\\help for available commands"
+    return "-- Sorry we don't implement this.\n\\help for available commands"
 
 class RoomCommand(UserCommand):
   AvailableCommands = \
@@ -89,9 +100,9 @@ class NonRoomCommand(UserCommand):
         skype.SendCommand(Skype4Py.api.Command(AddMemberCommand, Reply))
         result = "You should in the room now. Enjoy!"
       else:
-        result = "You failed to join the room. Sorry (bow)"
+        result = "Sorry but you failed to join the room."
     else:
-      result = "Sorry room [%s] is not in the list (bow)" % roomName
+      result = "Sorry [%s] is not in the room list." % roomName
     return result
   """ para: self """
   def ShowHelp(self):
@@ -100,16 +111,6 @@ class NonRoomCommand(UserCommand):
            "\\join ROOM_NAME\n" + \
            "\\help"
 
-class Skyfire:
-  """ para: Skype4Py User Object """
-  @staticmethod
-  def GetRoomList(skypeUser):
-    return [room['name'] for room in campfires[skypeUser.Handle].get_rooms()] if skypeUser.Handle in campfires else []
-  @staticmethod
-  def error(e):
-    print("Stream STOPPED due to ERROR: %s" % e)
-    print("Press ENTER to continue")
-    
 class CampfireEventHandler:
   @staticmethod
   def incoming(message):
@@ -231,6 +232,7 @@ if __name__ == "__main__":
   assert skype.CurrentUser.OnlineStatus=='INVISIBLE', 'Please keep bot invisible until it totally awake.'
 
   # TODO: We'll get SkypeError: [Errno 504] CHAT: action failed when using this (ALTER CHAT chatname SETOPTIONS 40)
+  # Currently we could only set necessary chat options manually
   # Set skype chat room options in config file
   #for roomName in rooms:
   #  skype.CreateChatUsingBlob(rooms[roomName].blob).Options = 40
@@ -243,8 +245,6 @@ if __name__ == "__main__":
     skype2camp[skypename].campname = unicode(tempcamp.get_connection().get(url="users/me", key="user")["name"])
     print 'Skype:[%s] --> Campfire:[%s]' % (skypename, skype2camp[skypename].campname)
     for roomName in Skyfire.GetRoomList(skype.User(skypename)):
-      if args.test and roomName.find('Test')!=0:
-        continue
       # Initialize room for listening message from campfire
       if not roomName in rooms:
         rooms[roomName] = tempcamp.get_room_by_name(roomName)
@@ -265,8 +265,7 @@ if __name__ == "__main__":
   # Clean up
   for roomName in rooms:
     rooms[roomName].stream.stop().join()
-    rooms[roomName].leave()
-    print 'Leave room [%s]' % roomName
+    print 'Clean up room [%s]' % roomName
 
   print 'Thank you for using skyfire! Bye=)'
   sys.exit(0)
