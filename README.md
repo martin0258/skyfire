@@ -1,6 +1,7 @@
 # Skyfire: Use skype as your campfire client app
 
-The goat of this package is to wrap skype so that you can interact with campfire through it.
+This package is inspired by the work on [Turn Skype into your own Campfire desktop client].
+The goal of this package is to wrap skype so that you can interact with campfire through it.
 
 ## LICENSE ##
 
@@ -25,9 +26,19 @@ http://pyaiml.sourceforge.net/
 
 ### OTHER ###
 
+#### Skype Settings ####
+
+You'll need a Skype user to act as campfire bot. Register a new skype account is a recommended way.
+Here's the things you should do before run the service:
+* Login bot on Skype
+* Create chat groups. The topics of chat groups and rooms' names should be exactly the same. (This is our way to bind rooms with Skype, so we CANNOT handle any room related change (e.g., room name changed, add or delete room) so far).
+* Find uri of chat groups and write down the mappings in config.
+* Change status of bot to INVISIBLE
+* Be friends with people who want to use this service
+
 #### Configuration ####
 
-Tune your skype and change example.cfg.
+Change example.cfg according to your situations.
 
 ## Usage ##
 
@@ -37,3 +48,5 @@ Tune your skype and change example.cfg.
 
 * Skype chat command: https://support.skype.com/en-us/faq/fa10042/what-are-chat-commands-and-roles
 * Skype API Reference: http://developer.skype.com/public-api-reference
+
+[Turn Skype into your own Campfire desktop client]: http://chozhiyath.wordpress.com/2010/11/22/campfire-client/
