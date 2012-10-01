@@ -4,6 +4,7 @@ import Skype4Py
 import ConfigParser
 import argparse
 import os
+import platform
 import sys
 import re
 import skybot
@@ -211,20 +212,22 @@ if __name__ == "__main__":
   # ['skypename'] : Skyfire object, which contains token, campfire object, campfire userId
   skyfirers = {}
   rooms = {}
+  print 'Reading config file......'
   config = ConfigParser.ConfigParser()
   config.optionxform = str
   config.read(args.config)
+  platform = platform.system()
+  Skype4PyInterface = config.get('Skype4Py','interface')
   domain = config.get('campfire','domain')
   username = config.get('campfire','username')
   password = config.get('campfire','password')
   campfire = pyfire.Campfire(domain, username, password, ssl=True)
-  print 'Reading config file......'
   for item in config.items('mapping'):
     print 'Get mapping [%s] -> [%s]' % (item[0], item[1])
     skyfirers[item[0]] = Skyfire()
     skyfirers[item[0]].token = item[1]
 
-  skype = Skype4Py.Skype()
+  skype = Skype4Py.Skype(Transport=Skype4PyInterface) if platform=="Linux" else Skype4Py.Skype()
   skype.Attach()
   skype.OnMessageStatus = SkypeEventHandler.monitor_message
   if skype.CurrentUser.Handle in skyfirers:
