@@ -98,7 +98,7 @@ class NonRoomCommand(UserCommand):
         AddMemberCommand = "ALTER CHAT %s ADDMEMBERS %s" % (skype.CreateChatUsingBlob(rooms[roomName].blob).Name, self.skypeUser.Handle)
         Reply = "ALTER CHAT ADDMEMBERS"
         skype.SendCommand(Skype4Py.api.Command(AddMemberCommand, Reply))
-        result = "You should in the room now. Enjoy!"
+        result = "You should be in the room now. Enjoy!"
       else:
         result = "Sorry but you failed to join the room."
     else:
@@ -253,12 +253,12 @@ if __name__ == "__main__":
         rooms[roomName].blob = config.get('blob',roomName)
         # msgFromSkype is the data structure used to avoid duplicate message: [campfire userId] -> ['msg1', 'msg2',..., 'msgn']
         rooms[roomName].msgFromSkype = {}
-        rooms[roomName].msgFromSkype[skyfirers[skypename].campId] = []
         rooms[roomName].topic = rooms[roomName].get_data()['topic']
         rooms[roomName].latestSpeaker = None
         rooms[roomName].stream = rooms[roomName].get_stream(error_callback=Skyfire.error,live=False,use_process=False)
         rooms[roomName].stream.attach(CampfireEventHandler.incoming).start()
         print 'Listening for room [%s]...' % roomName
+      rooms[roomName].msgFromSkype[skyfirers[skypename].campId] = []
 
   skype.ChangeUserStatus('ONLINE')
   raw_input("Waiting for messages (Press ENTER to finish)\n")
