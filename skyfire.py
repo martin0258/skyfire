@@ -8,6 +8,7 @@ import platform
 import sys
 import re
 import skybot
+import logger
 
 class Skyfire:
   """ para: Skype4Py User Object """
@@ -204,10 +205,12 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description=description)
   parser.add_argument('-c', '--config', default='example.cfg', help='config file. Use [example.cfg] by default')
   parser.add_argument('-v', '--version', action='version', version='Skyfire 0.1')
-  parser.add_argument('-l', '--logfile', help='log file. Print to stdout by default')
-  parser.add_argument('--test', action="store_true", help="Only room's name starts with 'Test' would be listened.")
+  parser.add_argument('-l', '--logfile', default='running.log', help='log file. Use [running.log] by default')
+  parser.add_argument('-t', '--test', action="store_true", help="Only room that its name begins with 'Test' would be used.")
   args = parser.parse_args()
 
+  sys.stdout = logger.Logger(sys.stdout, args.logfile)
+  sys.stderr = logger.Logger(sys.stderr, args.logfile, startStamp=False)
   # data structure to store users' info who are using this integration service
   # ['skypename'] : Skyfire object, which contains token, campfire object, campfire userId
   skyfirers = {}
@@ -273,4 +276,6 @@ if __name__ == "__main__":
     print 'Clean up room [%s]' % roomName
 
   print 'Thank you for using skyfire! Bye=)'
+  sys.stdout.close()
+  sys.stderr.close()
   sys.exit(0)
