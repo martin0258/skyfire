@@ -18,6 +18,15 @@ class Skyfire:
     roomList = [room['name'] for room in skyfirers[skypeUser.Handle].campObj.get_rooms()] if skypeUser.Handle in skyfirers else []
     return [roomName for roomName in roomList if roomName.find('Test')==0] if args.test else roomList
   @staticmethod
+  def GetSkypeNameByCampId(campId):
+    """
+    Args: campId (str):  campfire user Id.
+    Returns: skypename(str) or None if not found.
+    """
+    global skyfirers
+    skypename = [skypename for skypename in skyfirers if hasattr(skyfirers[skypename], 'campId') and skyfirers[skypename].campId==campId ]
+    return skypename[0] if len(skypename)>0 else None
+  @staticmethod
   def error(e):
     print("Stream STOPPED due to ERROR: %s" % e)
     print("Press ENTER to continue")
@@ -116,7 +125,7 @@ class NonRoomCommand(UserCommand):
 class CampfireEventHandler:
   @staticmethod
   def incoming(message):
-    global skype, rooms
+    global skype, rooms, skyfirers
     msg = ""
     campName = ""
     if message.user:
@@ -159,6 +168,12 @@ class CampfireEventHandler:
       rooms[roomName].topic = message.body
       skype.CreateChatUsingBlob(roomBlob).SendMessage(msg)
       print msg
+    elif message.is_leaving():
+      # Keep you in the room if you're in the corresponding skype group chat
+      skypename = Skyfire.GetSkypeNameByCampId(campId)
+      if skypename and skypename in [member.Handle for member in skype.CreateChatUsingBlob(roomBlob).Members]:
+        skyfirers[skypename].campObj.get_room_by_name(roomName).join()
+        print 'rejoin %s to %s' % (skypename, roomName)
     else:
       # We're not going to deal with other types
       pass
