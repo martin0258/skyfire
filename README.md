@@ -3,9 +3,15 @@
 This package is inspired by the work on [Turn Skype into your own Campfire desktop client].
 The goal of this package is to wrap skype so that you can interact with campfire through it.
 
+## IDEA ##
+
+We bind **Skype Chat Groups** with **Campfire Rooms**. 
+Bot would transfer the messages for you. 
+In fact, you can use Skyfire without Campfire to make Skype has the concept of **Chat Room**.
+
 ## LICENSE ##
 
-I'm still thinking of it.
+Skyfire is released under the [GPL 2.0 license].
 
 ## INSTALLATION ##
 
@@ -50,3 +56,4 @@ Change example.cfg according to your situations.
 * Skype API Reference: http://developer.skype.com/public-api-reference
 
 [Turn Skype into your own Campfire desktop client]: http://chozhiyath.wordpress.com/2010/11/22/campfire-client/
+[GPL 2.0 license]: http://www.gnu.org/licenses/gpl-2.0.txt
