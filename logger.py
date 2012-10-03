@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-import sys, time
+import sys, time, codecs
 
 # Reference: http://goo.gl/6TBTI
 class Logger:
   def __init__(self, io, filename, startStamp=True):
     self.io = io
-    self.logfile = open(filename, 'a')
+    self.logfile = codecs.open(filename, 'a', 'utf-8')
     self.logfile.write('\n\n======== New run at %s ========\n\n' % time.ctime() if startStamp else "")
   def write(self, text):
     self.io.write(text)
