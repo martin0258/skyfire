@@ -9,6 +9,7 @@ import sys
 import re
 import skybot
 import logger
+import win32com.client as comclt
 
 class Skyfire:
   """ para: Skype4Py User Object """
@@ -26,6 +27,27 @@ class Skyfire:
     global skyfirers
     skypename = [skypename for skypename in skyfirers if hasattr(skyfirers[skypename], 'campId') and skyfirers[skypename].campId==campId ]
     return skypename[0] if len(skypename)>0 else None
+  @staticmethod
+  def OpenChatByName(chatname):
+    global skype
+    OpenChatCommand = "OPEN CHAT %s" % (chatname)
+    Reply = OpenChatCommand
+    skype.SendCommand(Skype4Py.api.Command(OpenChatCommand, Reply))
+  @staticmethod
+  def EmulateTyping():
+    global wsh
+    platform = platform.system()
+    if platform=="Windows":
+      wsh.SendKeys('...')
+    elif platform=="Linux":
+      events = (uinput.KEY_DOT, uinput.KEY_BACKSPACE)
+      device = uinput.Device(events)
+      device.emit(uinput.KEY_DOT, 1)
+      device.emit(uinput.KEY_DOT, 0)
+      device.emit(uinput.KEY_BACKSPACE, 1)
+      device.emit(uinput.KEY_BACKSPACE, 0)
+    else:
+      pass
   @staticmethod
   def error(e):
     print("Stream STOPPED due to ERROR: %s" % e)
@@ -202,6 +224,8 @@ class SkypeEventHandler:
       targetRoom.join()
       targetRoom.speak(msgBody)
     else:
+      Skyfire.OpenChatByName(msg.Chat.Name)
+      Skyfire.EmulateTyping()
       # Non-room service. Let people join specifc room.
       if msg.IsCommand:
         result = NonRoomCommand(msgBody, msg.Sender).HandleCommand()
@@ -245,6 +269,9 @@ if __name__ == "__main__":
     skyfirers[item[0]] = Skyfire()
     skyfirers[item[0]].token = item[1]
 
+  # Initialize the com we would use to send keys
+  if platform=="Windows":
+    wsh = comclt.Dispatch("WScript.Shell")
   skype = Skype4Py.Skype(Transport=Skype4PyInterface) if platform=="Linux" else Skype4Py.Skype()
   skype.Attach()
   skype.OnMessageStatus = SkypeEventHandler.monitor_message
