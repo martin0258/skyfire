@@ -9,9 +9,9 @@ import sys
 import re
 import skybot
 import logger
-import win32com.client as comclt
 
 class Skyfire:
+  roomIsReady = False
   """ para: Skype4Py User Object """
   @staticmethod
   def GetRoomList(skypeUser):
@@ -36,10 +36,10 @@ class Skyfire:
   @staticmethod
   def EmulateTyping():
     global wsh
-    platform = platform.system()
-    if platform=="Windows":
+    userPlatform = platform.system()
+    if userPlatform=="Windows":
       wsh.SendKeys('...')
-    elif platform=="Linux":
+    elif userPlatform=="Linux":
       events = (uinput.KEY_DOT, uinput.KEY_BACKSPACE)
       device = uinput.Device(events)
       device.emit(uinput.KEY_DOT, 1)
@@ -258,7 +258,7 @@ if __name__ == "__main__":
   config = ConfigParser.ConfigParser()
   config.optionxform = str
   config.read(args.config)
-  platform = platform.system()
+  userPlatform = platform.system()
   Skype4PyInterface = config.get('Skype4Py','interface')
   domain = config.get('campfire','domain')
   username = config.get('campfire','username')
@@ -269,10 +269,15 @@ if __name__ == "__main__":
     skyfirers[item[0]] = Skyfire()
     skyfirers[item[0]].token = item[1]
 
-  # Initialize the com we would use to send keys
-  if platform=="Windows":
+  # Initialize Input device to simulate typing in order to show typing indicator to remote client
+  if userPlatform=="Windows":
+    import win32com.client as comclt
     wsh = comclt.Dispatch("WScript.Shell")
-  skype = Skype4Py.Skype(Transport=Skype4PyInterface) if platform=="Linux" else Skype4Py.Skype()
+  elif userPlatform=="Linux":
+    import uinput
+  else:
+    pass
+  skype = Skype4Py.Skype(Transport=Skype4PyInterface) if userPlatform=="Linux" else Skype4Py.Skype()
   skype.Attach()
   skype.OnMessageStatus = SkypeEventHandler.monitor_message
   if skype.CurrentUser.Handle in skyfirers:
@@ -308,6 +313,7 @@ if __name__ == "__main__":
         print 'Listening for room [%s]...' % roomName
       rooms[roomName].msgFromSkype[skyfirers[skypename].campId] = []
 
+  Skyfire.roomIsReady = True
   skype.ChangeUserStatus('ONLINE')
   raw_input("Waiting for messages (Press ENTER to finish)\n")
   skype.ChangeUserStatus('INVISIBLE')
