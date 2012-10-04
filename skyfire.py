@@ -28,12 +28,6 @@ class Skyfire:
     skypename = [skypename for skypename in skyfirers if hasattr(skyfirers[skypename], 'campId') and skyfirers[skypename].campId==campId ]
     return skypename[0] if len(skypename)>0 else None
   @staticmethod
-  def OpenChatByName(chatname):
-    global skype
-    OpenChatCommand = "OPEN CHAT %s" % (chatname)
-    Reply = OpenChatCommand
-    skype.SendCommand(Skype4Py.api.Command(OpenChatCommand, Reply))
-  @staticmethod
   def EmulateTyping():
     global wsh
     userPlatform = platform.system()
@@ -224,7 +218,7 @@ class SkypeEventHandler:
       targetRoom.join()
       targetRoom.speak(msgBody)
     else:
-      Skyfire.OpenChatByName(msg.Chat.Name)
+      msg.Chat.OpenWindow()
       Skyfire.EmulateTyping()
       # Non-room service. Let people join specifc room.
       if msg.IsCommand:
@@ -280,7 +274,7 @@ if __name__ == "__main__":
   skype = Skype4Py.Skype(Transport=Skype4PyInterface) if userPlatform=="Linux" else Skype4Py.Skype()
   skype.Attach()
   skype.OnMessageStatus = SkypeEventHandler.monitor_message
-  if skype.CurrentUser.Handle in skyfirers:
+  if skype.CurrentUserHandle in skyfirers:
     raw_input("Oops, got wrong skype instance: %s\nShould be someone else\nPress ENTER to exit..." % skype.CurrentUser.Handle)
     sys.exit(0)
   assert skype.CurrentUser.OnlineStatus=='INVISIBLE', 'Please keep bot invisible until it totally awake.'
