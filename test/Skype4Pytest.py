@@ -9,7 +9,7 @@ Test case:
   4. Close Message Dialog
 """
 if __name__ == "__main__":
- osPlatform = platform.system()
+  osPlatform = platform.system()
   print 'Your platform is %s' % osPlatform
   if osPlatform=="Windows":
     import win32com.client as comclt
@@ -18,18 +18,18 @@ if __name__ == "__main__":
   else:
     print 'Sorry your we do not have implementation on %s' % osPlatform
     sys.exit(0)
-
+ 
   # Create Skype instance
   skype = Skype4Py.Skype(Transport='x11') if osPlatform=="Linux" else Skype4Py.Skype()
-
+ 
   # (1) Connect Skype object to Skype client
   skype.Attach()
-
+ 
   print 'Your full name:', skype.CurrentUser.FullName
   print 'Your contacts:'
   for user in skype.Friends:
     print '    ', user.FullName
-
+ 
   # (2)
   skype.Client.OpenMessageDialog('echo123')
   if osPlatform=="Windows":
