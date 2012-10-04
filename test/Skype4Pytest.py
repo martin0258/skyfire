@@ -1,4 +1,4 @@
-import Skype4Py, time, sys, platform
+import Skype4Py, time, sys, platform, subprocess
 
 """
 Main purpose of (2)(3)(4) is about typing indicator.
@@ -30,7 +30,7 @@ if __name__ == "__main__":
  
   # (2)
   time.sleep(3)
-  skype.CreateChatWith('skysourcefire').OpenWindow()
+  skype.CreateChatWith('echo123').OpenWindow()
   # Following method would get Skype4Py.errors.SkypeError: [Errno 7] in Ubuntu 12.04
   # skype.Client.OpenMessageDialog('echo123')
   if osPlatform=="Windows":
