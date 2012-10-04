@@ -31,12 +31,15 @@ if __name__ == "__main__":
     print '    ', user.FullName
  
   # (2)
-  skype.Client.OpenMessageDialog('echo123')
+  skype.CreateChatWith('echo123').OpenWindow()
+  # Following method would get Skype4Py.errors.SkypeError: [Errno 7] in Ubuntu 12.04
+  # skype.Client.OpenMessageDialog('echo123')
   if osPlatform=="Windows":
     wsh = comclt.Dispatch("WScript.Shell")
     wsh.SendKeys('...') # send the keys you want
   elif osPlatform=="Linux":
     # Check /usr/include/linux/input.h for more definitions
+    # Note: You may need to 'sudo' if you get 'OSError: [Errno 13] Permission denied'
     events = (uinput.KEY_DOT, uinput.KEY_LEFTALT, uinput.KEY_F4)
     device = uinput.Device(events)
     # (3)
