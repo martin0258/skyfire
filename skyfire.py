@@ -9,9 +9,11 @@ import sys
 import re
 import skybot
 import logger
+import time
 
 class Skyfire:
   roomIsReady = False
+  IsTyping = False
   """ para: Skype4Py User Object """
   @staticmethod
   def GetRoomList(skypeUser):
@@ -30,17 +32,21 @@ class Skyfire:
   @staticmethod
   def EmulateTyping():
     global wsh
-    userPlatform = platform.system()
-    if userPlatform=="Windows":
-      wsh.SendKeys('...')
-    elif userPlatform=="Linux":
-      events = (uinput.KEY_DOT, uinput.KEY_BACKSPACE)
-      device = uinput.Device(events)
-      device.emit(uinput.KEY_DOT, 1)
-      device.emit(uinput.KEY_DOT, 0)
-      device.emit(uinput.KEY_BACKSPACE, 1)
-      device.emit(uinput.KEY_BACKSPACE, 0)
+    osPlatform = platform.system()
+    if osPlatform=="Windows":
+      #windowName = GetWindowText(GetForegroundWindow())
+      #assert "Skype" in windowName, "Wrong focus window [%s]. Should be Skype." % windowName
+      wsh.SendKeys('..................') # trigger typing indicator
+      time.sleep(3) # We'll not see the typing indicator if we close the window too quick
+      wsh.SendKeys('^a{DEL}%{F4}') # clear text and close chat window
+    elif osPlatform=="Linux":
+      # Pre-Condition: sudo apt-get install xdotool
+      windowId = subprocess.check_output(['xdotool', 'getactivewindow'])
+      windowName = subprocess.check_output(['xdotool', 'getwindowname', windowId ])
+      assert "Skype" in windowName, "Wrong focus window [%s]. Should be Skype." % windowName
+      subprocess.check_output(['xdotool', 'key', 'a', 'ctrl+a', 'BackSpace', 'alt+F4'])
     else:
+      # No implementation currently
       pass
   @staticmethod
   def error(e):
@@ -218,8 +224,13 @@ class SkypeEventHandler:
       targetRoom.join()
       targetRoom.speak(msgBody)
     else:
+      # Polling
+      while Skyfire.IsTyping:
+        time.sleep(1)
+      Skyfire.IsTyping = True
       msg.Chat.OpenWindow()
       Skyfire.EmulateTyping()
+      Skyfire.IsTyping = False
       # Non-room service. Let people join specifc room.
       if msg.IsCommand:
         result = NonRoomCommand(msgBody, msg.Sender).HandleCommand()
@@ -252,7 +263,7 @@ if __name__ == "__main__":
   config = ConfigParser.ConfigParser()
   config.optionxform = str
   config.read(args.config)
-  userPlatform = platform.system()
+  osPlatform = platform.system()
   Skype4PyInterface = config.get('Skype4Py','interface')
   domain = config.get('campfire','domain')
   username = config.get('campfire','username')
@@ -264,14 +275,15 @@ if __name__ == "__main__":
     skyfirers[item[0]].token = item[1]
 
   # Initialize Input device to simulate typing in order to show typing indicator to remote client
-  if userPlatform=="Windows":
+  if osPlatform=="Windows":
     import win32com.client as comclt
+    from win32gui import GetWindowText, GetForegroundWindow
     wsh = comclt.Dispatch("WScript.Shell")
-  elif userPlatform=="Linux":
-    import uinput
+  elif osPlatform=="Linux":
+    import subprocess
   else:
     pass
-  skype = Skype4Py.Skype(Transport=Skype4PyInterface) if userPlatform=="Linux" else Skype4Py.Skype()
+  skype = Skype4Py.Skype(Transport=Skype4PyInterface) if osPlatform=="Linux" else Skype4Py.Skype()
   skype.Attach()
   skype.OnMessageStatus = SkypeEventHandler.monitor_message
   if skype.CurrentUserHandle in skyfirers:
