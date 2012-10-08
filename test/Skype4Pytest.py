@@ -5,14 +5,16 @@ Main purpose of (2)(3)(4) is about typing indicator.
 Test case:
   1. Attach running Skype
   2. OpenMessageDialog
-  3. Type somethings
-  4. Close Message Dialog
+  3. GetWindowText
+  4. Type somethings
+  5. Close Message Dialog
 """
 if __name__ == "__main__":
   osPlatform = platform.system()
   print 'Your platform is %s' % osPlatform
   if osPlatform=="Windows":
     import win32com.client as comclt
+    from win32gui import GetWindowText, GetForegroundWindow
   elif osPlatform=="Linux":
     import uinput
   else:
@@ -35,6 +37,7 @@ if __name__ == "__main__":
   # skype.Client.OpenMessageDialog('echo123')
   if osPlatform=="Windows":
     wsh = comclt.Dispatch("WScript.Shell")
+    print GetWindowText(GetForegroundWindow())
     wsh.SendKeys('..................') # trigger typing indicator
     time.sleep(3) # If you close the window too quick, you'll not see the typing indicator
     wsh.SendKeys('^a{DEL}%{F4}') # clear text and close chat window
