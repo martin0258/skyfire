@@ -16,6 +16,17 @@
 <category><pattern>JESUS *</pattern><template><srai>GOD</srai>  </template></category>  
 <category><pattern>* JESUS</pattern><template><srai>GOD</srai>  </template></category>  
 
+<category><pattern>HI</pattern><template>
+  <random>
+    <li>Hi! What can I help you?</li>
+    <li>嗨~需要我幫你什麼嗎?</li>
+  </random>
+</template></category>  
+<category><pattern>HI *</pattern><template><srai>HI</srai>  </template></category>  
+<category><pattern>* HI</pattern><template><srai>HI</srai>  </template></category>  
+<category><pattern>HELLO *</pattern><template><srai>HI</srai>  </template></category>  
+<category><pattern>* HELLO</pattern><template><srai>HI</srai>  </template></category>  
+
 <category><pattern>WHO</pattern><template><random>  <li>我是策略性地不回答你。</li>  <li>I'm a happy campfire bot=)</li>  <li>Who do you think I am?</li>  </random></template></category>  
 <category><pattern>WHAT</pattern><template><random> <li>我是策略性地不回答你。</li> <li>你這個問題Yes and No, and most possible be NO.</li>  </random></template></category>  
 <category><pattern>WHO *</pattern><template><srai>WHO</srai>  </template></category>  
